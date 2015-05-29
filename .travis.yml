@@ -9,6 +9,7 @@ python:
   - 3.3
   - 3.4
   - pypy
+  - pypy3
 
 env:
   - BUILD_CAPNP=
@@ -19,6 +20,8 @@ env:
 matrix:
   exclude:
     - python: pypy
+      env: BUILD_CAPNP=
+    - python: pypy3
       env: BUILD_CAPNP=
 
 compiler: gcc
