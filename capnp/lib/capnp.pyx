@@ -726,6 +726,9 @@ cdef _setDynamicField(_DynamicSetterClasses thisptr, field, value, parent):
         thisptr.set(field, _extract_dynamic_server(value))
     elif value_type is _DynamicEnum:
         thisptr.set(field, _extract_dynamic_enum(value))
+    elif issubclass(value_type, _collections.Sequence):
+        builder = to_python_builder(thisptr.init(field, len(value)), parent)
+        _from_sequence(builder, value)
     else:
         raise KjException("Tried to set field: '{}' with a value of: '{}' which is an unsupported type: '{}'".format(field, str(value), str(type(value))))
 
@@ -810,6 +813,9 @@ cdef _setDynamicFieldStatic(DynamicStruct_Builder thisptr, field, value, parent)
         thisptr.set(field, _extract_dynamic_server(value))
     elif value_type is _DynamicEnum:
         thisptr.set(field, _extract_dynamic_enum(value))
+    elif issubclass(value_type, _collections.Sequence):
+        builder = to_python_builder(thisptr.init(field, len(value)), parent)
+        _from_sequence(builder, value)
     else:
         raise KjException("Tried to set field: '{}' with a value of: '{}' which is an unsupported type: '{}'".format(field, str(value), str(type(value))))
 
@@ -876,6 +882,11 @@ cdef _to_dict(msg, bint verbose, bint ordered):
 
 cdef _from_list(_DynamicListBuilder msg, list d):
     for i, x in enumerate(d):
+        msg._set(i, x)
+
+
+cdef _from_sequence(_DynamicListBuilder msg, seq):
+    for i, x in enumerate(seq):
         msg._set(i, x)
 
 
