@@ -183,6 +183,22 @@ def test_set_dict(all_types):
     assert msg.structList[0].int32Field == 102
 
 
+def test_set_mapping(all_types):
+    msg = all_types.TestAllTypes.new_message()
+
+    class my_dict(dict):
+        pass
+
+    msg.structField = my_dict(int32Field=100)
+
+    assert msg.structField.int32Field == 100
+
+    msg.init('structList', 2)
+    msg.structList[0] = my_dict(int32Field=102)
+
+    assert msg.structList[0].int32Field == 102
+
+
 def test_set_dict_union(addressbook):
     person = addressbook.Person.new_message(**{'employment': {'employer': {'name': 'foo'}}})
 

@@ -29,6 +29,7 @@ import threading as _threading
 import socket as _socket
 import random as _random
 import collections as _collections
+import six
 
 _CAPNP_VERSION_MAJOR = capnp.CAPNP_VERSION_MAJOR
 _CAPNP_VERSION_MINOR = capnp.CAPNP_VERSION_MINOR
@@ -729,6 +730,13 @@ cdef _setDynamicField(_DynamicSetterClasses thisptr, field, value, parent):
     elif issubclass(value_type, _collections.Sequence):
         builder = to_python_builder(thisptr.init(field, len(value)), parent)
         _from_sequence(builder, value)
+    elif issubclass(value_type, _collections.Mapping):
+        if _DynamicSetterClasses is DynamicStruct_Builder:
+            builder = to_python_builder(thisptr.get(field), parent)
+            builder.from_mapping(value)
+        else:
+            builder = to_python_builder(thisptr[field], parent)
+            builder.from_mapping(value)
     else:
         raise KjException("Tried to set field: '{}' with a value of: '{}' which is an unsupported type: '{}'".format(field, str(value), str(type(value))))
 
@@ -816,6 +824,9 @@ cdef _setDynamicFieldStatic(DynamicStruct_Builder thisptr, field, value, parent)
     elif issubclass(value_type, _collections.Sequence):
         builder = to_python_builder(thisptr.init(field, len(value)), parent)
         _from_sequence(builder, value)
+    elif issubclass(value_type, _collections.Mapping):
+        builder = to_python_builder(thisptr.get(field), parent)
+        builder.from_mapping(value)
     else:
         raise KjException("Tried to set field: '{}' with a value of: '{}' which is an unsupported type: '{}'".format(field, str(value), str(type(value))))
 
@@ -1394,6 +1405,18 @@ cdef class _DynamicStructBuilder:
 
     def from_dict(self, dict d):
         for key, val in d.iteritems():
+            if key != 'which':
+                try:
+                    self._set(key, val)
+                except Exception as e:
+                    if 'expected isSetInUnion(field)' in str(e):
+                        self.init(key)
+                        self._set(key, val)
+                    else:
+                        raise
+
+    def from_mapping(self, d):
+        for key, val in six.iteritems(d):
             if key != 'which':
                 try:
                     self._set(key, val)
